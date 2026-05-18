@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Taskly — Task Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-page:    #F1EFE8;
+      --bg-card:    #FFFFFF;
+      --bg-surface: #F8F7F3;
+      --text-primary:   #2C2C2A;
+      --text-secondary: #888780;
+      --text-tertiary:  #B4B2A9;
+      --border-light:   rgba(44,44,42,0.1);
+      --border-mid:     rgba(44,44,42,0.2);
+      --border-dark:    rgba(44,44,42,0.35);
+      --green:   #1D9E75;
+      --green-bg:#E1F5EE;
+      --green-dk:#0F6E56;
+      --amber:   #EF9F27;
+      --amber-bg:#FAEEDA;
+      --amber-dk:#854F0B;
+      --red:     #E24B4A;
+      --red-bg:  #FCEBEB;
+      --red-dk:  #A32D2D;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-page:    #1C1C1A;
+        --bg-card:    #242422;
+        --bg-surface: #2C2C2A;
+        --text-primary:   #F1EFE8;
+        --text-secondary: #888780;
+        --text-tertiary:  #5F5E5A;
+        --border-light:   rgba(241,239,232,0.08);
+        --border-mid:     rgba(241,239,232,0.15);
+        --border-dark:    rgba(241,239,232,0.25);
+        --green-bg:#085041;
+        --green-dk:#9FE1CB;
+        --amber-bg:#633806;
+        --amber-dk:#FAC775;
+        --red-bg:  #501313;
+        --red-dk:  #F7C1C1;
+      }
+    }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 580px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.75rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: var(--text-primary);
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--bg-card);
+      font-size: 20px;
+    }
+
+    .logo-text {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+    }
+
+    .date-str {
+      font-size: 12px;
+      font-family: 'DM Mono', monospace;
+      color: var(--text-tertiary);
+    }
+
+    /* ── Stats ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 1.25rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 0.5px solid var(--border-light);
+      border-radius: 14px;
+      padding: 14px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    .stat-card.total::before  { background: var(--text-tertiary); }
+    .stat-card.done::before   { background: var(--green); }
+    .stat-card.pending::before{ background: var(--amber); }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      margin-bottom: 5px;
+    }
+
+    .stat-num {
+      font-size: 30px;
+      font-weight: 800;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+
+    .stat-card.done .stat-num    { color: var(--green); }
+    .stat-card.pending .stat-num { color: var(--amber); }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      margin-bottom: 1.5rem;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-tertiary);
+      font-family: 'DM Mono', monospace;
+      margin-bottom: 6px;
+    }
+
+    .progress-track {
+      background: var(--border-light);
+      border-radius: 99px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #1D9E75, #5DCAA5);
+      transition: width 0.4s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ── Add row ── */
+    .add-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1.25rem;
+    }
+
+    .task-input {
+      flex: 1;
+      min-width: 0;
+      padding: 11px 14px;
+      background: var(--bg-card);
+      border: 0.5px solid var(--border-mid);
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .task-input::placeholder { color: var(--text-tertiary); font-weight: 400; }
+    .task-input:focus { border-color: var(--border-dark); }
+
+    .priority-sel {
+      padding: 11px 10px;
+      background: var(--bg-card);
+      border: 0.5px solid var(--border-mid);
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      cursor: pointer;
+      outline: none;
+    }
+
+    .add-btn {
+      padding: 11px 18px;
+      background: var(--text-primary);
+      color: var(--bg-card);
+      border: none;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .add-btn:hover  { opacity: 0.82; }
+    .add-btn:active { transform: scale(0.97); }
+
+    /* ── Filters ── */
+    .filter-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 1.1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 5px 14px;
+      border: 0.5px solid var(--border-light);
+      border-radius: 99px;
+      background: transparent;
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn:hover  { border-color: var(--border-mid); color: var(--text-primary); }
+    .filter-btn.active { background: var(--text-primary); color: var(--bg-card); border-color: var(--text-primary); }
+
+    /* ── Task list ── */
+    .tasks-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .task-item {
+      background: var(--bg-card);
+      border: 0.5px solid var(--border-light);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: border-color 0.15s, opacity 0.2s;
+      animation: slideIn 0.22s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .task-item:hover { border-color: var(--border-mid); }
+    .task-item.done-item { opacity: 0.5; }
+
+    .check-box {
+      width: 22px;
+      height: 22px;
+      border: 1.5px solid var(--border-mid);
+      border-radius: 7px;
+      flex-shrink: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      background: transparent;
+      color: transparent;
+      font-size: 13px;
+    }
+
+    .check-box.checked {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+
+    .task-text {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      line-height: 1.45;
+      color: var(--text-primary);
+    }
+
+    .task-text.striked {
+      text-decoration: line-through;
+      color: var(--text-tertiary);
+    }
+
+    .priority-badge {
+      font-size: 10px;
+      font-weight: 700;
+      font-family: 'DM Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+
+    .badge-high { background: var(--red-bg);   color: var(--red-dk); }
+    .badge-med  { background: var(--amber-bg); color: var(--amber-dk); }
+    .badge-low  { background: var(--green-bg); color: var(--green-dk); }
+
+    .del-btn {
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 3px 5px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 0.15s, color 0.15s, background 0.15s;
+    }
+
+    .task-item:hover .del-btn { opacity: 1; }
+    .del-btn:hover { color: var(--red); background: var(--red-bg); }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 3.5rem 1rem;
+      color: var(--text-tertiary);
+    }
+
+    .empty-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+      opacity: 0.35;
+    }
+
+    .empty-text {
+      font-size: 14px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+<main class="app" role="main">
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon" aria-hidden="true">
+        <i class="ti ti-layout-kanban"></i>
+      </div>
+      <span class="logo-text">Taskly</span>
+    </div>
+    <span class="date-str" id="date-str" aria-label="Tanggal hari ini"></span>
+  </header>
+
+  <section aria-label="Statistik tugas">
+    <div class="stats-row">
+      <div class="stat-card total">
+        <div class="stat-label">Total</div>
+        <div class="stat-num" id="s-total">0</div>
+      </div>
+      <div class="stat-card done">
+        <div class="stat-label">Selesai</div>
+        <div class="stat-num" id="s-done">0</div>
+      </div>
+      <div class="stat-card pending">
+        <div class="stat-label">Tertunda</div>
+        <div class="stat-num" id="s-pend">0</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="progress-wrap" aria-label="Progress penyelesaian tugas">
+    <div class="progress-meta">
+      <span>Progress</span>
+      <span id="prog-pct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="prog-bar" style="width:0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+  </div>
+
+  <div class="add-row">
+    <input
+      class="task-input"
+      id="task-input"
+      type="text"
+      placeholder="Tambah tugas baru..."
+      aria-label="Nama tugas baru"
+      autocomplete="off"
+    />
+    <select class="priority-sel" id="prio-sel" aria-label="Pilih prioritas">
+      <option value="high">🔴 Tinggi</option>
+      <option value="med" selected>🟡 Sedang</option>
+      <option value="low">🟢 Rendah</option>
+    </select>
+    <button class="add-btn" onclick="addTask()" aria-label="Tambah tugas">
+      <i class="ti ti-plus" aria-hidden="true"></i> Tambah
+    </button>
+  </div>
+
+  <div class="filter-row" role="group" aria-label="Filter tugas">
+    <button class="filter-btn active" onclick="setFilter('all', this)">Semua</button>
+    <button class="filter-btn" onclick="setFilter('pending', this)">Aktif</button>
+    <button class="filter-btn" onclick="setFilter('done', this)">Selesai</button>
+    <button class="filter-btn" onclick="setFilter('high', this)">🔴 Tinggi</button>
+    <button class="filter-btn" onclick="setFilter('med', this)">🟡 Sedang</button>
+    <button class="filter-btn" onclick="setFilter('low', this)">🟢 Rendah</button>
+  </div>
+
+  <div class="tasks-list" id="tasks-list" aria-live="polite" aria-label="Daftar tugas"></div>
+</main>
+
+<script>
+  // Set tanggal hari ini
+  document.getElementById('date-str').textContent = new Date().toLocaleDateString('id-ID', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
+
+  // Data awal
+  let tasks = [
+    { id: 1, text: 'Review laporan bulanan tim', done: false, prio: 'high' },
+    { id: 2, text: 'Update dokumentasi API',      done: false, prio: 'med' },
+    { id: 3, text: 'Sync dengan klien Project Alpha', done: true, prio: 'high' },
+    { id: 4, text: 'Buat mockup halaman login baru',  done: false, prio: 'med' },
+    { id: 5, text: 'Kirim invoice bulan ini',         done: true,  prio: 'low' },
+  ];
+  let nextId = 6;
+  let currentFilter = 'all';
+
+  const badgeMap = {
+    high: { cls: 'badge-high', label: 'Tinggi' },
+    med:  { cls: 'badge-med',  label: 'Sedang' },
+    low:  { cls: 'badge-low',  label: 'Rendah' },
+  };
+
+  function filteredTasks() {
+    switch (currentFilter) {
+      case 'done':    return tasks.filter(t => t.done);
+      case 'pending': return tasks.filter(t => !t.done);
+      case 'high':    return tasks.filter(t => t.prio === 'high');
+      case 'med':     return tasks.filter(t => t.prio === 'med');
+      case 'low':     return tasks.filter(t => t.prio === 'low');
+      default:        return tasks;
+    }
+  }
+
+  function render() {
+    const total = tasks.length;
+    const done  = tasks.filter(t => t.done).length;
+    const pct   = total === 0 ? 0 : Math.round((done / total) * 100);
+
+    document.getElementById('s-total').textContent = total;
+    document.getElementById('s-done').textContent  = done;
+    document.getElementById('s-pend').textContent  = total - done;
+    document.getElementById('prog-pct').textContent = pct + '%';
+
+    const bar = document.getElementById('prog-bar');
+    bar.style.width = pct + '%';
+    bar.setAttribute('aria-valuenow', pct);
+
+    const list = document.getElementById('tasks-list');
+    const ft   = filteredTasks();
+
+    if (ft.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><i class="ti ti-clipboard-x" aria-hidden="true"></i></div>
+          <div class="empty-text">Tidak ada tugas di sini</div>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = ft.map(t => {
+      const b = badgeMap[t.prio];
+      return `
+        <div class="task-item${t.done ? ' done-item' : ''}" id="item-${t.id}">
+          <div
+            class="check-box${t.done ? ' checked' : ''}"
+            onclick="toggle(${t.id})"
+            role="checkbox"
+            aria-checked="${t.done}"
+            aria-label="Tandai tugas selesai"
+            tabindex="0"
+            onkeydown="if(event.key==='Enter'||event.key===' ')toggle(${t.id})"
+          >${t.done ? '<i class="ti ti-check" aria-hidden="true"></i>' : ''}</div>
+          <span
+            class="task-text${t.done ? ' striked' : ''}"
+            onclick="toggle(${t.id})"
+          >${escHtml(t.text)}</span>
+          <span class="priority-badge ${b.cls}">${b.label}</span>
+          <button
+            class="del-btn"
+            onclick="del(${t.id})"
+            aria-label="Hapus tugas"
+          ><i class="ti ti-x" aria-hidden="true"></i></button>
+        </div>`;
+    }).join('');
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function addTask() {
+    const inp  = document.getElementById('task-input');
+    const text = inp.value.trim();
+    if (!text) { inp.focus(); return; }
+    const prio = document.getElementById('prio-sel').value;
+    tasks.unshift({ id: nextId++, text, done: false, prio });
+    inp.value = '';
+    inp.focus();
+    render();
+  }
+
+  function toggle(id) {
+    const t = tasks.find(t => t.id === id);
+    if (t) { t.done = !t.done; render(); }
+  }
+
+  function del(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    render();
+  }
+
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  }
+
+  document.getElementById('task-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTask();
+  });
+
+  render();
+</script>
+</body>
+</html>
